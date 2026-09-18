@@ -12,11 +12,21 @@ int main(void) {
     return 1;
   }
 
-  printf("ソケットを作成しました: %d\n", sockfd);
+  // IPアドレス・ポート番号を設定する
+  struct sockaddr_in addr;
+
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = htons(8080);
+
+  // ソケットにIPアドレス・ポート番号を割り当てる
+  if(bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    return 1;
+  }
+
+  printf("8080番ポートに割り当てました\n");
 
   close(sockfd);
 
-  printf("ソケットを閉じました\n");
-
-return 0;
+  return 0;
 }
