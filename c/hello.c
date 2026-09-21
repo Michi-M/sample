@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int main(void) {
   int sockfd;
@@ -12,6 +13,7 @@ int main(void) {
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
   if(sockfd == -1) {
+    perror("socket");
     return 1;
   }
 
@@ -24,12 +26,14 @@ int main(void) {
 
   // ソケットにIPアドレス・ポート番号を割り当てる
   if(bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    perror("bind");
     close(sockfd); // 確保したリソースはプログラム終了前に片付ける
     return 1;
   }
 
   // 接続を待ち受ける
   if(listen(sockfd, 10) == -1) {
+    perror("listen");
     close(sockfd);
     return 1;
   }
@@ -40,6 +44,7 @@ int main(void) {
     clientfd = accept(sockfd, NULL, NULL);
 
     if(clientfd == -1) {
+      perror("accept");
       continue;
     }
 
@@ -48,7 +53,13 @@ int main(void) {
 
     ssize_t n = read(clientfd, buffer, sizeof(buffer) - 1);
 
-    if(n <= 0){
+    if(n == -1){
+      perror("read");
+      close(clientfd);
+      continue;
+    }
+
+    if(n == 0) {
       close(clientfd);
       continue;
     }
