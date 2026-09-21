@@ -2,7 +2,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,7 +58,10 @@ int main(void) {
     // リクエストターゲットを取り出す
     char path[1024];
 
-    sscanf(buffer, "GET %s HTTP/1.1", path);
+    if(sscanf(buffer, "GET %s HTTP/1.1", path) != 1){
+      close(clientfd);
+      continue;
+    };
 
     char *question = strchr(path, '?');
 
@@ -73,7 +75,6 @@ int main(void) {
       if(equal != NULL) {
         *equal = '\0';
 
-        char *name = query;
         char *value = equal + 1;
 
         // value（1%2B2）をデコードする
@@ -106,7 +107,35 @@ int main(void) {
         }
         decoded[j] = '\0';
 
-        printf("%s\n", decoded);
+        // 計算する
+        int a;
+        int b;
+
+        if(sscanf(decoded, "%d+%d", &a, &b) == 2){
+          int result = a + b;
+
+          // 計算結果を文字列にする
+          char body[100];
+          snprintf(body, sizeof(body), "%d", result);
+
+          // レスポンスを作る
+          char response[1024];
+
+          snprintf(
+            response,
+            sizeof(response),
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: %zu\r\n"
+            "\r\n"
+            "%s",
+            strlen(body),
+            body
+          );
+
+          // ブラウザに送る
+          write(clientfd, response, strlen(response));
+        }
       }
     }
 
